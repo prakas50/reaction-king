@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Reaction King – Premium Demo</title>
+
+<style>
+/* ===== PREMIUM BACKGROUND ===== */
+body{
+  font-family: Arial, sans-serif;
+  text-align:center;
+  color:#ffffff;
+  min-height:100vh;
+  margin:0;
+  padding:0;
+
+  background: linear-gradient(
+    -45deg,
+    #0a0f2c,
+    #1b1f5a,
+    #3a1c71,
+    #1a1a40
+  );
+  background-size: 400% 400%;
+  animation: premiumBG 18s ease infinite;
+}
+
+@keyframes premiumBG {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ===== UI ===== */
+#box{
+  width:320px;
+  height:160px;
+  margin:20px auto;
+  background:red;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  font-size:26px;
+  cursor:pointer;
+  border-radius:12px;
+}
+
+button{
+  padding:12px 25px;
+  font-size:18px;
+  cursor:pointer;
+  margin:10px;
+  border:none;
+  border-radius:8px;
+}
+
+#joinBtn{
+  background:#6c63ff;
+  color:#fff;
+}
+
+#timer{
+  font-size:42px;
+  font-weight:bold;
+}
+
+table{
+  margin:20px auto;
+  border-collapse:collapse;
+  width:90%;
+  max-width:420px;
+  background:rgba(0,0,0,0.4);
+}
+
+th,td{
+  border:1px solid #555;
+  padding:8px;
+}
+
+th{
+  background:#222;
+}
+
+.win{
+  color:#00ff99;
+  font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Reaction King</h1>
+
+<h3 id="wallet">Wallet: ₹50</h3>
+<p>Entry Fee: ₹10</p>
+
+<h2 id="status">Lobby open</h2>
+<div id="timer">60</div>
+<h3 id="players">Players Joined: 1</h3>
+
+<button id="joinBtn" onclick="joinLobby()">Join Match (₹10)</button>
+
+<div id="box" onclick="tap()">WAIT...</div>
+
+<div id="resultBox"></div>
+
+<script>
+/* ===== GLOBAL ===== */
+let wallet = 50;
+let entryFee = 10;
+let lobbyTime = 60;
+let lobbyInterval;
+let gameStarted = false;
+let tapAllowed = false;
+let startTime = 0;
+let joined = false;
+let myName = "You";
+
+/* ===== START LOBBY ON LOAD ===== */
+startLobby();
+
+function startLobby(){
+  lobbyTime = 60;
+  joined = false;
+  gameStarted = false;
+  tapAllowed = false;
+
+  document.getElementById("status").innerText = "Lobby open";
+  document.getElementById("timer").innerText = lobbyTime;
+  document.getElementById("players").innerText = "Players Joined: 1";
+  document.getElementById("joinBtn").style.display = "inline-block";
+  document.getElementById("joinBtn").disabled = false;
+  document.getElementById("resultBox").innerHTML = "";
+  document.getElementById("box").style.display = "none";
+
+  clearInterval(lobbyInterval);
+  lobbyInterval = setInterval(()=>{
+    lobbyTime--;
+    document.getElementById("timer").innerText = lobbyTime;
+
+    document.getElementById("players").innerText =
+      "Players Joined: " + (Math.floor(Math.random()*10)+5);
+
+    // Last 5 sec -> hide join button
+    if(lobbyTime <= 5){
+      document.getElementById("joinBtn").style.display = "none";
+    }
+
+    if(lobbyTime <= 0){
+      clearInterval(lobbyInterval);
+      startGame();
+    }
+  },1000);
+}
+
+/* ===== JOIN MATCH ===== */
+function joinLobby(){
+  if(joined) return;
+
+  if(lobbyTime <= 5){
+    alert("Too late! Match is starting.");
+    return;
+  }
+
+  if(wallet < entryFee){
+    alert("Insufficient Balance");
+    return;
+  }
+
+  wallet -= entryFee;
+  document.getElementById("wallet").innerText =
+    "Wallet: ₹" + wallet;
+
+  joined = true;
+  document.getElementById("status").innerText =
+    "Joined! Waiting for match start...";
+}
+
+/* ===== START GAME ===== */
+function startGame(){
+  document.getElementById("status").innerText = "MATCH STARTED!";
+  document.getElementById("timer").innerText = "GO!";
+
+  let box = document.getElementById("box");
+  box.style.display = "flex";
+  box.style.background = "red";
+  box.innerText = "WAIT...";
+  tapAllowed = false;
+
+  // Random TAP appear time: 1–15 sec
+  let randomDelay = Math.floor(Math.random()*15000) + 1000;
+
+  setTimeout(()=>{
+    box.style.background = "green";
+    box.innerText = "TAP NOW!";
+    startTime = Date.now();
+    tapAllowed = true;
+  }, randomDelay);
+}
+
+/* ===== TAP ===== */
+function tap(){
+  if(!tapAllowed) return;
+
+  let myReaction = Date.now() - startTime;
+  tapAllowed = false;
+  document.getElementById("box").style.display = "none";
+
+  showResults(myReaction);
+}
+
+/* ===== RESULTS ===== */
+function showResults(myReaction){
+  let demoPlayers = [
+    {name:"Rahul", time: Math.floor(Math.random()*120)+200},
+    {name:"Amit", time: Math.floor(Math.random()*120)+210},
+    {name:"Suresh", time: Math.floor(Math.random()*120)+220},
+    {name:"Neha", time: Math.floor(Math.random()*120)+230}
+  ];
+
+  demoPlayers.push({name:myName, time: myReaction});
+  demoPlayers.sort((a,b)=>a.time-b.time);
+
+  let html = "<h2>Match Results</h2>";
+  html += "<table><tr><th>Player</th><th>Reaction</th></tr>";
+
+  demoPlayers.forEach((p,i)=>{
+    html += `<tr class="${i===0?'win':''}">
+      <td>${p.name}</td>
+      <td>${p.time} ms</td>
+    </tr>`;
+  });
+
+  html += "</table>";
+
+  if(demoPlayers[0].name === myName){
+    wallet += 40;
+    document.getElementById("wallet").innerText =
+      "Wallet: ₹" + wallet;
+    html += "<p class='win'>🎉 You Won ₹40!</p>";
+  }else{
+    html += "<p>❌ You Lost. Winner: <b>" +
+      demoPlayers[0].name + "</b></p>";
+  }
+
+  html += "<button onclick='startLobby()'>Play Next Match</button>";
+
+  document.getElementById("resultBox").innerHTML = html;
+}
+</script>
+
+</body>
+</html>
